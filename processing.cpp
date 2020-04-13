@@ -33,7 +33,7 @@ SC_MODULE(process){
   void prc_update(){
     //Clear outgoing1 and outgoing2 signal
     outgoing1 = 0;
-    outgoing2 = 0'
+    outgoing2 = 0;
 
     //Loop 1 - Update position
     for(int i = 0; i < 2; i++){
