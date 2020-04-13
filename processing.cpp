@@ -47,13 +47,20 @@ SC_MODULE(process){
         }else{                       //West
           x[i] = x[i] - .02;
         }
+
         if(boundary[i]){
           //update the current and next grids
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 3; //Signal 3 tells the robot has CROSSED
           flag = 1;
         }else{
-          robotTransmit[i] = 0; //Robot shouldn't transmit a sinal
+          robotTransmit[i] = 0; //Robot isn't to transmit  a signal
+          signalTransmit[i] = 2; //Signal 2 tells the robot to RESUME
+        }
+        
+        //Signal 3 received from server acknowleding the border CROSS of the robot
+        if(status[i] == 3){
+          robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 2; //Signal 0 tells the robot to RESUME regularly
         }
       }else if(status[i] == 1){

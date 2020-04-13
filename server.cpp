@@ -28,14 +28,13 @@ SC_MODULE(server){
   void prc_update(){
     //Update Robot 1
     if(incoming1){
-      status[0] = statusIn1;
       //Respond to Signal 0 - CROSSING
+      
 
-      //Respond to Signal 1 - STOPPED
+      //Respond to Signal 1 (STOP) and Signal 2 (RESUME)
+      status[0] = statusIn1;
 
-      //Respond to Signal 2 - RESUME
-
-      //Respon to Signal 3 - CROSSED by updating the grid indexes
+      //Respond to Signal 3 - CROSSED by updating the grid indexes
       if(statusIn1 == 3){
         if(currentPath1 < sizeof(robot1Path)/sizeof(int) - 1){
           currentPath1++;
@@ -43,12 +42,18 @@ SC_MODULE(server){
         if(nextPath1 < sizeof(robot1Path)/sizeof(int) - 1){
           nextPath1++;
         }
+        status[0] = 3; //THIS NEEDS TO BE TRANSMITTED*******
       }
     }
     //Update Robot 2
     if(incoming2){
-      status[1] = statusIn2;
-      //Update Grid
+      //Respond to Signal 0 - CROSSING
+
+
+      //Respond to Signal 1 (STOP) and Signal 2 (RESUME)
+      status[1] = statusIn1;
+
+      //Respond to Signal 3 - CROSSED by updating the grid indexes
       if(statusIn2 == 3){
         if(currentPath2 < sizeof(robot2Path)/sizeof(int) - 1){
           currentPath2++;
@@ -56,6 +61,7 @@ SC_MODULE(server){
         if(nextPath2 < sizeof(robot2Path)/sizeof(int) - 1){
           nextPath2++;
         }
+        status[1] = 3; //THIS NEEDS TO BE TRANSMITTED*******
       }
     }
 
