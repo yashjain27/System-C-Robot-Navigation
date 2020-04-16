@@ -11,44 +11,37 @@ SC_MODULE(robot){
   sc_out<bool> outgoingProcess;
   sc_out<sc_uint<2> > statusOutServer;
   sc_out<bool> outgoingServer;
-  sc_in<sc_uint<2> > statusOutProcess;
-
-  //Variables
-  sc_signal<bool> flagPtoR;
-  sc_signal<bool> flagStoR;
+  sc_out<sc_uint<2> > statusOutProcess;
 
   //Receive Process
   void prc_receive_process(){
-    flagPtoR = 1;
+    cout << "Received from process: " << statusInProcess.read() << endl;
+    prc_transmit_server();
   }
 
   //Transmit Process
   void prc_transmit_process(){
+    outgoingServer = incomingProcess;
     statusOutProcess = statusInServer.read();
-    flagStoR = 0;
   }
 
   //Receive Server
   void prc_receive_server(){
-    flagStoR = 1;
+    cout << "Received from server: " << statusInServer.read() << endl;
+    prc_transmit_process();
   }
 
   //Transmit Server
   void prc_transmit_server(){
+    outgoingProcess = incomingServer; 
     statusOutServer = statusInProcess.read();
-    flagPtoR = 0;
   }
 
   SC_CTOR(robot){
     cout << "Executing robot.cpp" << endl;
     SC_METHOD(prc_receive_process);
-    sensitive << incomingProcess;
-    SC_METHOD(prc_transmit_process);
-    sensitive << flagStoR.pos();
+    sensitive << incomingProcess.pos();
     SC_METHOD(prc_receive_server);
-    sensitive << incomingServer;
-    SC_METHOD(prc_transmit_server);
-    sensitive << flagPtoR.pos();
-
+    sensitive << incomingServer.pos();
   }
 };
