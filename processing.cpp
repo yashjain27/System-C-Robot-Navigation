@@ -27,8 +27,8 @@ SC_MODULE(process){
   sc_uint<2> signalTransmit[2]; //Specify which signal to transmit: 0,1,2
   sc_uint<6> robot1Path[11] = {10,9,8,7,6,5,4,3,2,1,11}; //Robot 1 Path
   sc_uint<6> robot2Path[10] = {51,49,39,36,26,23,13,11,1,2}; //Robot 2 Path
-  sc_uint<6> obs1Path[10]; //Obstacle 1 Path
-  sc_uint<6> obs2Path[10]; //Obstacle 2 Path
+  sc_uint<6> obs1Path[10] = {34,33,32,31,30,29,28,27,26,23}; //Obstacle 1 Path
+  sc_uint<6> obs2Path[10] = {1,2,3,4,5,6,7,8,9,10}; //Obstacle 2 Path
   int currentPath1;
   int nextPath1;
   int currentPath2;
@@ -45,7 +45,7 @@ SC_MODULE(process){
     {6,0,8,2,0,5,0,3},  //4
     {8,0,10,2,0,6,0,4}, //5
     {10,0,12,2,0,7,0,5},  //6
-    {12,0,14,2,0,6,0,6},  //7
+    {12,0,14,2,0,8,0,6},  //7
     {14,0,16,2,0,9,0,7},  //8
     {16,0,18,2,0,10,0,8}, //9
     {18,0,20,2,0,0,12,9}, //10
@@ -115,7 +115,7 @@ SC_MODULE(process){
     {14,16,16,18,0,59,0,57},  //58
     {16,16,18,18,0,60,0,58},  //59
     {18,16,20,18,50,0,0,59} //60
-  }
+  };
 
   //Update
   void prc_update(){
@@ -127,36 +127,35 @@ SC_MODULE(process){
     for(int i = 0; i < 2; i++){
       if(status[i] != 1){
         if(direction[i] == 0){ //North
-          y[i] = y[i] + .02;
+          y[i] = y[i] - .02;
         }else if(direction[i] == 1){ //East
           x[i] = x[i] + .02;
         }else if(direction[i] == 2){ //South
-          y[i] = y[i] - .02;
+          y[i] = y[i] + .02;
         }else{                       //West
           x[i] = x[i] - .02;
         }
-        cout << "Robot: " << i << " | (x,y): " << "(" << x[i] << "," << y[i] << ")" << endl;
 
         if(boundary[i]){
           //Update the current and next grids and direction
-          cout << "Boundary flag triggered " << i << endl;
+          //cout << "Boundary flag triggered " << i << endl;
           switch (i) {
-            case 0: if(currentPath1 < sizeof(robot1Path)/sizeof(int) - 1){
+            case 0: if(currentPath1 < sizeof(robot1Path)/24 - 1){
                       currentPath1++;
-                      cout << "Robot 1 moved to the next grid " << currentPath1 << endl;
+                      cout << "Robot 1 moved to the next grid "<< endl;
                     }
-                    if(nextPath1 < sizeof(robot1Path)/sizeof(int) - 1){
+                    if(nextPath1 < sizeof(robot1Path)/24 - 1){
                       nextPath1++;
-                      cout << "Robot 1 next path updated " << nextPath2 << endl;
+                      //cout << "Robot 1 next path updated " << nextPath1 << endl;
                     }
                     break;
-            case 1: if(currentPath2 < sizeof(robot2Path)/sizeof(int) - 1){
+            case 1: if(currentPath2 < sizeof(robot2Path)/24 - 1){
                       currentPath2++;
-                      cout << "Robot 2 moved to the next grid " << currentPath2 << endl;
+                      cout << "Robot 2 moved to the next grid " << endl;
                     }
-                    if(nextPath2 < sizeof(robot2Path)/sizeof(int) - 1){
+                    if(nextPath2 < sizeof(robot2Path)/24 - 1){
                       nextPath2++;
-                      cout << "Robot 2 next path updated " << nextPath2 << endl;
+                      //cout << "Robot 2 next path updated " << nextPath2 << endl;
                     }
                     break;
           }
@@ -186,9 +185,14 @@ SC_MODULE(process){
             x[i] = x[i] - .02;
           }
         }
-        cout << "Robot: " << i << " | (x,y): " << "(" << x[i] << "," << y[i] << ")" << endl;
       }
+      //Round off float to 2 places
+      float valueX = (int)(x[i] * 100 + .5);
+      x[i] = (float)(valueX / 100);
+      float valueY = (int)(y[i] * 100 + .5);
+      y[i] = (float)(valueY / 100);
     }
+    cout << "Robot 1 Grid#: " << robot1Path[currentPath1] << " | (x,y): " << "(" << x[0] << "," << y[0] << ")" << " ||| Robot 2 Grid#: " << robot2Path[currentPath2] << " | (x,y): " << "(" << x[1] << "," << y[1] << ")" << endl;
     //Update direction change for robot
     direction_change();
 
@@ -196,40 +200,67 @@ SC_MODULE(process){
     //Loop 2 - Obstacle updates position
     for(int i = 0; i < 2; i++){
       if(directionObs[i] == 0){ //North
-        obsY[i] = obsY[i] + .04;
+        obsY[i] = obsY[i] - .04;
       }else if(directionObs[i] == 1){ //East
         obsX[i] = obsX[i] + .04;
       }else if(directionObs[i] == 2){ //South
-        obsY[i] = obsY[i] - .04;
+        obsY[i] = obsY[i] + .04;
       }else{                       //West
         obsX[i] = obsX[i] - .04;
       }
-      cout << "obstacle: " << i << " | (x,y): " << "(" << obsX[i] << "," << obsY[i] << ")" << endl;
 
       if(directionObs[i] == 1 || directionObs[i] == 3){ //East / West
         if(fmod(obsX[i], 2.0) == 0){
-          if(currentObsPath1 < sizeof(obs1Path)/sizeof(int) - 1){
-            currentObsPath1++;
-            cout << "Obstacle " << i << " moved to the next grid " << currentObsPath1 << endl;
-          }
-          if(nextObsPath1 < sizeof(obs1Path)/sizeof(int) - 1){
-            nextObsPath1++;
-            cout << "Obstacle " << i << " updated next path " << nextObsPath1 << endl;
+          if(i == 0){
+            if(currentObsPath1 < sizeof(obs1Path)/24 - 1){
+              currentObsPath1++;
+              cout << "Obstacle " << i << " moved to the next grid " << currentObsPath1 << endl;
+            }
+            if(nextObsPath1 < sizeof(obs1Path)/24 - 1){
+              nextObsPath1++;
+              //cout << "Obstacle " << i << " updated next path " << nextObsPath1 << endl;
+            }
+          }else{
+            if(currentObsPath2 < sizeof(obs2Path)/24 - 1){
+              currentObsPath2++;
+              cout << "Obstacle  " << i << " moved to the next grid " << currentObsPath1 << endl;
+            }
+            if(nextObsPath2 < sizeof(obs2Path)/24 - 1){
+              nextObsPath2++;
+              //cout << "Obstacle  " << i << " updated next path " << nextObsPath1 << endl;
+            }
           }
         }
       }else{
         if(fmod(obsY[i], 2.0) == 0){
-          if(currentObsPath2 < sizeof(obs2Path)/sizeof(int) - 1){
-            currentObsPath2++;
-            cout << "Obstacle  " << i << " moved to the next grid " << currentObsPath1 << endl;
-          }
-          if(nextObsPath2 < sizeof(obs2Path)/sizeof(int) - 1){
-            nextObsPath2++;
-            cout << "Obstacle  " << i << " updated next path " << nextObsPath1 << endl;
+          if(i == 0){
+            if(currentObsPath1 < sizeof(obs1Path)/24 - 1){
+              currentObsPath1++;
+              cout << "Obstacle " << i << " moved to the next grid " << currentObsPath1 << endl;
+            }
+            if(nextObsPath1 < sizeof(obs1Path)/24 - 1){
+              nextObsPath1++;
+              //cout << "Obstacle " << i << " updated next path " << nextObsPath1 << endl;
+            }
+          }else{
+            if(currentObsPath2 < sizeof(obs2Path)/24 - 1){
+              currentObsPath2++;
+              cout << "Obstacle  " << i << " moved to the next grid " << currentObsPath1 << endl;
+            }
+            if(nextObsPath2 < sizeof(obs2Path)/24 - 1){
+              nextObsPath2++;
+              //cout << "Obstacle  " << i << " updated next path " << nextObsPath1 << endl;
+            }
           }
         }
       }
+      //Round off float to 2 places
+      float valueObsX = (int)(obsX[i] * 100 + .5);
+      obsX[i] = (float)(valueObsX / 100);
+      float valueObsY = (int)(obsY[i] * 100 + .5);
+      obsY[i] = (float)(valueObsY / 100);
     }
+    cout << "Obstacle 1 Grid#: " << obs1Path[currentObsPath1] << " | (x,y): " << "(" << obsX[0] << "," << obsY[0] << ")" << " ||| Obstacle 2 Grid#: " << obs2Path[currentObsPath2] << " | (x,y): " << "(" << obsX[1] << "," << obsY[1] << ")" << endl;
     //Update direction change for obstacles
     direction_changeObs();
 
@@ -273,9 +304,19 @@ SC_MODULE(process){
 
       //Boundary internal flag
       if(direction[i] == 1 || direction[i] == 3){ //East / West
-        boundary[i] = (fmod(x[i], 2.0) == 0);
+        if(fmod(x[i], 2.0) == 0){
+          boundary[i] = 1;
+          //cout << "boundary 1 activated" << endl;
+        }else{
+          boundary[i] = 0;
+        }
       }else{
-        boundary[i] = (fmod(y[i], 2.0) == 0);
+        if(fmod(y[i], 2.0) == 0){
+          boundary[i] = 1;
+          //cout << "boundary 2 activated" << endl;
+        }else{
+          boundary[i] = 0;
+        }
       }
     }
 
@@ -283,9 +324,13 @@ SC_MODULE(process){
     for(int i = 0; i < 2; i++){
       //Loop each obstacle
       for(int j = 0; j < 2; j++){
-        if((abs(x[i] - obsX[j] <= 3) && y[i] == obsY[i]) || ((abs(y[i] - obsY[j]) <= 3) && x[i] == obsX[i])){ //If robot detects an obstacle within 3m, send a stop signal
+        //cout << "Abs: " << (abs(x[i] - obsX[j]) <= 3) << "(i,j)" << i << "," << j << endl;
+        //cout << "True? " << (y[i] == obsY[j]) << " x[i]: " << y[i] << " obsX[j]: " << obsY[j] << endl;
+        //cout << "Third: " << ((abs(x[i] - obsX[j]) <= 3) && y[i] == obsY[j])  << endl;
+        if(((abs(x[i] - obsX[j]) <= 3) && y[i] == obsY[j]) || ((abs(y[i] - obsY[j]) <= 3) && x[i] == obsX[j])){ //If robot detects an obstacle within 3m, send a stop signal
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 1; //Signal 1 tells the robot to tell the server to STOP
+          cout << "STOP, robot " << (i+1) << " is in the way of obstacle " << (j+1) << endl;
         }else{
           robotTransmit[i] = 0; //Robot shouldn't transmit a signal
           signalTransmit[i] = 2; //Signal 2 - Robot should resume
@@ -321,57 +366,63 @@ SC_MODULE(process){
         }
       }
     }
+    cout << endl << endl;
   }
 
   //Update direction change for robots
   void direction_change(){
     //Robot 1
     if(fmod(x[0],2.0) == 1.0 && fmod(y[0],2.0) == 1.0){
-      for(int i = 4; i < 8, i++){
-        if(robot1Path[nextPath1] == map3d[robot1Path[currentPath1]][i]){
+      for(int i = 4; i < 8; i++){
+        if(robot1Path[nextPath1] == map3d[robot1Path[currentPath1]-1][i]){
+          //cout << "1. Next Grid is: " << robot1Path[nextPath1] << endl;
+          //cout << "map3d[robot1Path[currentPath1]][i]: " << map3d[robot1Path[currentPath1]-1][i] << endl;
           direction[0] = i - 4;
           break;
         }
       }
     }
-    cout << "Direction of Robot 1: " << direction[0] << endl;
+    //cout << "Direction of Robot 1: " << direction[0] << endl;
 
     //Robot 2
     if(fmod(x[1],2.0) == 1.0 && fmod(y[1],2.0) == 1.0){
-      for(int i = 4; i < 8, i++){
-        if(robot2Path[nextPath2] == map3d[robot2Path[currentPath2]][i]){
+      //cout << "2. Current grid is " << robot2Path[currentPath2] << " next  grid is: " << robot2Path[nextPath2] << endl;
+      for(int i = 4; i < 8; i++){
+        if(robot2Path[nextPath2] == map3d[robot2Path[currentPath2]-1][i]){
+          //cout << "2. Next Path is " << nextPath2 << " next  grid is: " << robot2Path[nextPath2] << endl;
+          //cout << "map3d[robot2Path[currentPath2]][i]: " << map3d[robot2Path[currentPath2]-1][i] << endl;
           direction[1] = i - 4;
           break;
         }
       }
     }
-    cout << "Direction of Robot 2: " << direction[1] << endl;
-    //{0,0,2,2,0,2,11,0}, //1
+    //cout << "Direction of Robot 2: " << direction[1] << endl;
   }
 
   //Update direction change for obstacles
   void direction_changeObs(){
-    //Robot 1
+    //Obstacle 1
     if(fmod(obsX[0],2.0) == 1.0 && fmod(obsY[0],2.0) == 1.0){
-      for(int i = 4; i < 8, i++){
-        if(obs1Path[nextObsPath1] == map3d[obs1Path[currentObsPath1]][i]){
+      for(int i = 4; i < 8; i++){
+        if(obs1Path[nextObsPath1] == map3d[obs1Path[currentObsPath1]-1][i]){
           directionObs[0] = i - 4;
+          //cout << i << " Next path: " << obs1Path[nextObsPath1] << " Current path: " << obs1Path[currentObsPath1] << endl;
           break;
         }
       }
     }
-    cout << "Direction of Obstacle 1: " << directionObs[0] << endl;
+    //cout << "Direction of Obstacle 1: " << directionObs[0] << endl;
 
-    //Robot 2
+    //Obstacle 2
     if(fmod(obsX[1],2.0) == 1.0 && fmod(obsY[1],2.0) == 1.0){
-      for(int i = 4; i < 8, i++){
-        if(obs2Path[nextObsPath2] == map3d[obs2Path[currentObsPath2]][i]){
+      for(int i = 4; i < 8; i++){
+        if(obs2Path[nextObsPath2] == map3d[obs2Path[currentObsPath2]-1][i]){
           directionObs[1] = i - 4;
           break;
         }
       }
     }
-    cout << "Direction of Obstacle 2: " << directionObs[1] << endl;
+    //cout << "Direction of Obstacle 2: " << directionObs[1] << endl;
   }
 
   SC_CTOR(process){
@@ -381,15 +432,28 @@ SC_MODULE(process){
     SC_METHOD(prc_receive);
     sensitive << incoming1;
     sensitive << incoming2;
-    direction_change();
-    direction_changeObs();
+
+    //Initializers
     currentPath1 = 0;
-    nextPath1 = 0;
+    nextPath1 = 1;
     currentPath2 = 0;
-    nextPath2 = 0;
+    nextPath2 = 1;
     currentObsPath1 = 0;
-    nextObsPath1 = 0;
+    nextObsPath1 = 1;
     currentObsPath2 = 0;
-    nextObsPath2 = 0;
+    nextObsPath2 = 1;
+    direction[0] = 3;
+    direction[1] = 0;
+    directionObs[0] = 3;
+    directionObs[1] = 1;
+    x[0] = 19;
+    y[0] = 1;
+    x[1] = 1;
+    y[1] = 17;
+    obsX[0] = 17;
+    obsY[0] = 9;
+    obsX[1] = 1;
+    obsY[1] = 1;
+
   }
 };

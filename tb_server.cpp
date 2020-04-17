@@ -2,11 +2,13 @@
 #include "server.cpp"
 
 int sc_main(int argc, char* argv[]){
-  //Inputs
+  //Inputs server
   sc_signal<bool> incomingSig1;
   sc_signal<sc_uint<2> > statusIn1;
   sc_signal<bool> incomingSig2;
   sc_signal<sc_uint<2> > statusIn2;
+
+  //Outputs server
   sc_signal<bool> statusOut1;
   sc_signal<sc_uint<2> > outgoingSig1;
   sc_signal<bool> statusOut2;

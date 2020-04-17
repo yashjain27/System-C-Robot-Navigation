@@ -1,5 +1,5 @@
 #include "systemc.h"
-#include "processing.cpp"
+#include "processing.cpp";
 
 int sc_main(int argc, char* argv[]){
   //Inputs
@@ -26,7 +26,10 @@ int sc_main(int argc, char* argv[]){
   processing.outgoing2(outgoing2);
   processing.statusOut2(statusOut2);
 
-  for(int i = 0; i < 50; i++){
+  for(int i = 0; i < 150; i++){
+    clk = 0;
     sc_start(1, SC_NS);
+    clk = 1;
+    sc_start(1,SC_NS);
   }
 }

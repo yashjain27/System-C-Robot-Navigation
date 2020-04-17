@@ -4,80 +4,74 @@
 #include "server.cpp"
 
 int sc_main(int argc, char* argv[]){
-  //Inputs
+  //Inputs processing
   sc_signal<bool> clk;
-  sc_signal<sc_uint<6> > nextPath1;
-  sc_signal<sc_uint<6> > nextPath2;
-  sc_signal<bool> safeToCross1;
-  sc_signal<bool> safeToCross2;
-  sc_signal<bool> server1;
-  sc_signal<bool> server2;
-  sc_signal<sc_uint<1> > distance1;
-  sc_signal<sc_uint<1> > distance2;
-  sc_signal<bool> loop1;
-  sc_signal<bool> loop2;
-  sc_signal<bool> loop3;
-  sc_signal<bool> loop4;
-  sc_signal<bool> crossing1;
-  sc_signal<bool> crossing2;
-  sc_signal<bool> stopped1;
-  sc_signal<bool> stopped2;
-  sc_signal<bool> moving1;
-  sc_signal<bool> moving2;
+  sc_signal<sc_uint<2> > statusRP1;
+  sc_signal<bool> incomingRP1;
+  sc_signal<sc_uint<2> > statusRP2;
+  sc_signal<bool> incomingRP2;
 
-  //Obstacle 1
-  sc_uint<6> path[10] = {13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
-  sc_uint<6> index1;
-  sc_uint<1> stepper1;
+  //Outputs processing
+  sc_signal<bool> outgoingPR1;
+  sc_signal<sc_uint<2> > statusPR1;
+  sc_signal<bool> outgoingPR2;
+  sc_signal<sc_uint<2> > statusPR2;
 
-  //Obstacle 2
-  sc_uint<6> path[10] = {26, 27, 28, 29, 30, 31, 32, 33, 34, 35};
-  sc_uint<6> index2;
-  sc_uint<1> stepper2;
+  //Inputs server
+  sc_signal<bool> incomingSig1;
+  sc_signal<sc_uint<2> > statusIn1;
+  sc_signal<bool> incomingSig2;
+  sc_signal<sc_uint<2> > statusIn2;
 
-  robot r1("robot1");
-  r1.nextPath(nextPath1);
-  r1.safeToCross(safeToCross1);
-  r1.serverIn(server1);
-  r1.distance(distance1);
-  r1.loopIn1(loop1);
-  r1.loopIn3(loop3);
-  r1.loopIn4(loop4);
-  r1.crossing(crossing1);
-  r1.stopped(stopped1);
-  r1.moving(moving1);
+  //Outputs server
+  sc_signal<bool> statusOut1;
+  sc_signal<sc_uint<2> > outgoingSig1;
+  sc_signal<bool> statusOut2;
+  sc_signal<sc_uint<2> > outgoingSig2;
+
+  process processing("process");
+  processing.clk(clk);
+  processing.statusIn1(statusRP1);
+  processing.incoming1(incomingRP1);
+  processing.statusIn2(statusRP2);
+  processing.incoming2(incomingRP2);
+  processing.outgoing1(outgoingPR1);
+  processing.statusOut1(statusPR1);
+  processing.outgoing2(outgoingPR2);
+  processing.statusOut2(statusPR2);
+
+  robot r1("robot");
+  r1.statusInProcess(statusRP1);
+  r1.incomingProcess(outgoingPR1);
+  r1.statusInServer(outgoingSig1);
+  r1.incomingServer(statusOut1);
+  r1.outgoingProcess(incomingRP1);
+  r1.statusOutServer(statusIn1);
+  r1.outgoingServer(incomingSig1);
+  r1.statusOutProcess(statusRP1);
 
   robot r2("robot2");
-  r2.nextPath(nextPath2);
-  r2.safeToCross(safeToCross2);
-  r2.serverIn(server2);
-  r2.distance(distance2);
-  r2.loopIn1(loop1);
-  r2.loopIn3(loop3);
-  r2.loopIn4(loop4);
-  r2.crossing(crossing2);
-  r2.stopped(stopped2);
-  r2.moving(moving2);
+  r2.statusInProcess(statusRP2);
+  r2.incomingProcess(outgoingPR2);
+  r2.statusInServer(outgoingSig2);
+  r2.incomingServer(statusOut2);
+  r2.outgoingProcess(incomingRP2);
+  r2.statusOutServer(statusIn2);
+  r2.outgoingServer(incomingSig2);
+  r2.statusOutProcess(statusRP2);
 
-  process p1("process");
-  p1.clk(clk);
-  p1.loop1(loop1);
-  p1.loop2(loop2);
-  p1.loop3(loop3);
-  p1.loop4(loop4);
-
-  server s1("server");
-  s1.crossing1(crossing1);
-  s1.stopped1();
-  s1.moving1(stopped1);
-  s1.crossing2(crossing2);
-  s1.stopped2(stopped2);
-  s1.moving2(moving2);
-  s1.serverOut1(server1);
-  s1.serverOut2(server2);
+  server srvr("server");
+  srvr.statusIn1(statusIn1);
+  srvr.incomingSig1(incomingSig1);
+  srvr.statusIn2(statusIn2);
+  srvr.incomingSig2(incomingSig2);
+  srvr.statusOut1(statusOut1);
+  srvr.outgoingSig1(outgoingSig1);
+  srvr.statusOut2(statusOut2);
+  srvr.outgoingSig2(outgoingSig2);
 
   //Run for 100 cycles
-  for(int i = 0; i < 100; i++){
+  for(int i = 0; i < 400; i++){
     clk = 1;
     sc_start(1, SC_NS);
     clk = 0;
