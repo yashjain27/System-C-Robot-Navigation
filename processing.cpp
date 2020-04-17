@@ -14,9 +14,6 @@ SC_MODULE(process){
   sc_out<bool> outgoing2;
   sc_out<sc_uint<2> > statusOut2;
 
-  //Signals
-  sc_signal<bool> flag; //Used to tell processing to transmit, direction is from update process to transmit
-
   //Variables
   float x[2]; //Both robots' X position
   float y[2]; //Both robots' Y position
@@ -28,8 +25,8 @@ SC_MODULE(process){
   bool boundary[2]; //Stop at boundary
   bool robotTransmit[2]; //Choose which robot transmits
   sc_uint<2> signalTransmit[2]; //Specify which signal to transmit: 0,1,2
-  sc_uint<6> robot1Path[10]; //Robot 1 Path
-  sc_uint<6> robot2Path[10]; //Robot 2 Path
+  sc_uint<6> robot1Path[11] = {10,9,8,7,6,5,4,3,2,1,11}; //Robot 1 Path
+  sc_uint<6> robot2Path[10] = {51,49,39,36,26,23,13,11,1,2}; //Robot 2 Path
   sc_uint<6> obs1Path[10]; //Obstacle 1 Path
   sc_uint<6> obs2Path[10]; //Obstacle 2 Path
   int currentPath1;
@@ -40,7 +37,7 @@ SC_MODULE(process){
   int nextObsPath1;
   int currentObsPath2;
   int nextObsPath2;
-  int map3d[9][10] = {
+  int map3d[60][8] = {
     //Row 0
     {0,0,2,2,0,2,11,0}, //1
     {2,0,4,2,0,3,0,1},  //2
@@ -138,28 +135,33 @@ SC_MODULE(process){
         }else{                       //West
           x[i] = x[i] - .02;
         }
+        cout << "Robot: " << i << " | (x,y): " << "(" << x[i] << "," << y[i] << ")" << endl;
 
         if(boundary[i]){
           //Update the current and next grids and direction
+          cout << "Boundary flag triggered " << i << endl;
           switch (i) {
             case 0: if(currentPath1 < sizeof(robot1Path)/sizeof(int) - 1){
                       currentPath1++;
+                      cout << "Robot 1 moved to the next grid " << currentPath1 << endl;
                     }
                     if(nextPath1 < sizeof(robot1Path)/sizeof(int) - 1){
                       nextPath1++;
+                      cout << "Robot 1 next path updated " << nextPath2 << endl;
                     }
                     break;
             case 1: if(currentPath2 < sizeof(robot2Path)/sizeof(int) - 1){
                       currentPath2++;
+                      cout << "Robot 2 moved to the next grid " << currentPath2 << endl;
                     }
                     if(nextPath2 < sizeof(robot2Path)/sizeof(int) - 1){
                       nextPath2++;
+                      cout << "Robot 2 next path updated " << nextPath2 << endl;
                     }
                     break;
           }
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 3; //Signal 3 tells the robot has CROSSED
-          flag = 1;
         }else{
           robotTransmit[i] = 0; //Robot isn't to transmit  a signal
           signalTransmit[i] = 2; //Signal 2 tells the robot to RESUME
@@ -169,6 +171,7 @@ SC_MODULE(process){
         if(status[i] == 3){
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 2; //Signal 0 tells the robot to RESUME regularly
+          cout << "Robot: " << i << " has crossed." << endl;
         }
       }else if(status[i] == 1){
         //Stop at boundary
@@ -183,9 +186,9 @@ SC_MODULE(process){
             x[i] = x[i] - .02;
           }
         }
+        cout << "Robot: " << i << " | (x,y): " << "(" << x[i] << "," << y[i] << ")" << endl;
       }
     }
-
     //Update direction change for robot
     direction_change();
 
@@ -201,23 +204,28 @@ SC_MODULE(process){
       }else{                       //West
         obsX[i] = obsX[i] - .04;
       }
+      cout << "obstacle: " << i << " | (x,y): " << "(" << obsX[i] << "," << obsY[i] << ")" << endl;
 
       if(directionObs[i] == 1 || directionObs[i] == 3){ //East / West
         if(fmod(obsX[i], 2.0) == 0){
           if(currentObsPath1 < sizeof(obs1Path)/sizeof(int) - 1){
             currentObsPath1++;
+            cout << "Obstacle " << i << " moved to the next grid " << currentObsPath1 << endl;
           }
           if(nextObsPath1 < sizeof(obs1Path)/sizeof(int) - 1){
             nextObsPath1++;
+            cout << "Obstacle " << i << " updated next path " << nextObsPath1 << endl;
           }
         }
       }else{
         if(fmod(obsY[i], 2.0) == 0){
           if(currentObsPath2 < sizeof(obs2Path)/sizeof(int) - 1){
             currentObsPath2++;
+            cout << "Obstacle  " << i << " moved to the next grid " << currentObsPath1 << endl;
           }
           if(nextObsPath2 < sizeof(obs2Path)/sizeof(int) - 1){
             nextObsPath2++;
+            cout << "Obstacle  " << i << " updated next path " << nextObsPath1 << endl;
           }
         }
       }
@@ -233,7 +241,6 @@ SC_MODULE(process){
         if(fmod(y[i], 2.0) <= 0.5){
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 0; //Signal 0 tells the robot is CROSSING
-          flag = 1;
         }else{
           robotTransmit[i] = 0; //Robot shouldn't transmit a signal
           signalTransmit[i] = 2; //Signal 2 - Robot should resume
@@ -242,7 +249,6 @@ SC_MODULE(process){
         if(fmod(x[i], 2.0) >= 1.5){
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 0; //Signal 0 tells the robot is CROSSING
-          flag = 1;
         }else{
           robotTransmit[i] = 0; //Robot shouldn't transmit a signal
           signalTransmit[i] = 2; //Signal 2 - Robot should resume
@@ -251,7 +257,6 @@ SC_MODULE(process){
         if(fmod(y[i], 2.0) >= 1.5){
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 0; //Signal 0 tells the robot is CROSSING
-          flag = 1;
         }else{
           robotTransmit[i] = 0; //Robot shouldn't transmit a signal
           signalTransmit[i] = 2; //Signal 2 - Robot should resume
@@ -260,7 +265,6 @@ SC_MODULE(process){
         if(fmod(x[i], 2.0) <= 0.5){
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 0; //Signal 0 tells the robot is CROSSING
-          flag = 1;
         }else{
           robotTransmit[i] = 0; //Robot shouldn't transmit a signal
           signalTransmit[i] = 2; //Signal 2 - Robot should resume
@@ -282,14 +286,14 @@ SC_MODULE(process){
         if((abs(x[i] - obsX[j] <= 3) && y[i] == obsY[i]) || ((abs(y[i] - obsY[j]) <= 3) && x[i] == obsX[i])){ //If robot detects an obstacle within 3m, send a stop signal
           robotTransmit[i] = 1; //Robot is to transmit  a signal
           signalTransmit[i] = 1; //Signal 1 tells the robot to tell the server to STOP
-          flag = 1;
         }else{
           robotTransmit[i] = 0; //Robot shouldn't transmit a signal
           signalTransmit[i] = 2; //Signal 2 - Robot should resume
         }
       }
     }
-
+    //Transmit the signals;
+    prc_transmit();
   }
 
   //Receive
@@ -317,7 +321,6 @@ SC_MODULE(process){
         }
       }
     }
-    flag = 0;
   }
 
   //Update direction change for robots
@@ -331,6 +334,7 @@ SC_MODULE(process){
         }
       }
     }
+    cout << "Direction of Robot 1: " << direction[0] << endl;
 
     //Robot 2
     if(fmod(x[1],2.0) == 1.0 && fmod(y[1],2.0) == 1.0){
@@ -341,6 +345,7 @@ SC_MODULE(process){
         }
       }
     }
+    cout << "Direction of Robot 2: " << direction[1] << endl;
     //{0,0,2,2,0,2,11,0}, //1
   }
 
@@ -355,6 +360,7 @@ SC_MODULE(process){
         }
       }
     }
+    cout << "Direction of Obstacle 1: " << directionObs[0] << endl;
 
     //Robot 2
     if(fmod(obsX[1],2.0) == 1.0 && fmod(obsY[1],2.0) == 1.0){
@@ -365,17 +371,25 @@ SC_MODULE(process){
         }
       }
     }
+    cout << "Direction of Obstacle 2: " << directionObs[1] << endl;
   }
 
   SC_CTOR(process){
     cout << "Executing processing.cpp" << endl;
     SC_METHOD(prc_update);
     sensitive << clk.pos();
-    SC_METHOD(prc_transmit);
-    sensitive << flag.pos();
     SC_METHOD(prc_receive);
     sensitive << incoming1;
     sensitive << incoming2;
     direction_change();
+    direction_changeObs();
+    currentPath1 = 0;
+    nextPath1 = 0;
+    currentPath2 = 0;
+    nextPath2 = 0;
+    currentObsPath1 = 0;
+    nextObsPath1 = 0;
+    currentObsPath2 = 0;
+    nextObsPath2 = 0;
   }
 };
